@@ -1,6 +1,5 @@
-// core.js - AI Homework Solver V4.0 (Multi-API & Key Rotation)
+// core.js - AI Homework Solver V4.1 (Multi-API + Key Health Checker)
 window.initAISolver = function () {
-    // Danh sách cấu hình mặc định của các nhà cung cấp API
     const PROVIDERS = {
         gemini: {
             name: 'Google Gemini',
@@ -33,10 +32,8 @@ window.initAISolver = function () {
     let lastSelectedText = '';
     let keyIndexMap = { gemini: 0, groq: 0, openrouter: 0, openai: 0 };
 
-    // Lấy danh sách mảng các API Key của nhà cung cấp hiện tại (hỗ trợ nhập nhiều key cách nhau bằng dấu phẩy)
     function getKeyList(provider = currentProvider) {
         const raw = GM_getValue(`KEYS_${provider}`, '');
-        // Tương thích ngược với biến GEMINI_API_KEY cũ
         if (!raw && provider === 'gemini') {
             const oldKey = GM_getValue('GEMINI_API_KEY', '');
             if (oldKey) return [oldKey.trim()];
@@ -44,29 +41,34 @@ window.initAISolver = function () {
         return raw.split(/[,;\n]+/).map(k => k.trim()).filter(Boolean);
     }
 
+    function maskKey(key) {
+        if (!key || key.length <= 10) return '***';
+        return `${key.slice(0, 6)}...${key.slice(-4)}`;
+    }
+
     function promptManageKeys() {
         const currentRaw = getKeyList(currentProvider).join(', ');
         const input = prompt(
-            `🔑 Quản lý API Key cho [${PROVIDERS[currentProvider].name}]\n` +
-            `• Bạn có thể nhập NHIỀU API Key cách nhau bởi dấu phẩy (,)\n` +
-            `• Khi 1 Key hết hạn mức (429), hệ thống sẽ tự động xoay sang Key tiếp theo:\n`,
+            `🔑 Quản lý danh sách API Key cho [${PROVIDERS[currentProvider].name}]\n` +
+            `• Nhập nhiều Key cách nhau bởi dấu phẩy (,)\n` +
+            `• Sau khi lưu, bấm nút 🩺 để kiểm tra Key sống/chết:\n`,
             currentRaw
         );
         if (input !== null) {
             GM_setValue(`KEYS_${currentProvider}`, input.trim());
             keyIndexMap[currentProvider] = 0;
             const count = getKeyList(currentProvider).length;
-            showStatus(`✅ Đã lưu ${count} API Key cho ${PROVIDERS[currentProvider].name}!`);
+            showStatus(`✅ Đã lưu ${count} Key cho ${PROVIDERS[currentProvider].name}.\nNhấn nút 🩺 (hoặc Alt + C) để kiểm tra trạng thái Key!`);
         }
     }
 
     function promptSwitchProvider() {
         const choice = prompt(
-            `🌐 Chọn dịch vụ AI muốn sử dụng (nhập số 1 -> 4):\n` +
-            `1. Google Gemini (Hỗ trợ nhiều Key, đọc ảnh/toán tốt nhất)\n` +
-            `2. Groq (Miễn phí, phản hồi siêu tốc 0.3s)\n` +
-            `3. OpenRouter (Dùng DeepSeek, Qwen, Claude...)\n` +
-            `4. OpenAI (ChatGPT - gpt-4o-mini / gpt-4o)`,
+            `🌐 Chọn dịch vụ AI (nhập số 1 -> 4):\n` +
+            `1. Google Gemini (Đọc ảnh/toán tốt nhất)\n` +
+            `2. Groq (Miễn phí, tốc độ siêu nhanh)\n` +
+            `3. OpenRouter (DeepSeek, Qwen, Claude...)\n` +
+            `4. OpenAI (ChatGPT)`,
             currentProvider === 'gemini' ? '1' : currentProvider === 'groq' ? '2' : currentProvider === 'openrouter' ? '3' : '4'
         );
         if (!choice) return;
@@ -80,18 +82,15 @@ window.initAISolver = function () {
         updateHeaderTitle();
 
         const keys = getKeyList(currentProvider);
-        if (keys.length === 0) {
-            promptManageKeys();
-        } else {
-            showStatus(`✅ Đã chuyển sang ${PROVIDERS[currentProvider].name} (${modelId}) - Có ${keys.length} Key.`);
-        }
+        if (keys.length === 0) promptManageKeys();
+        else showStatus(`✅ Đã chuyển sang ${PROVIDERS[currentProvider].name} (${modelId}) - Có ${keys.length} Key.`);
     }
 
     function promptModelChange() {
         const p = PROVIDERS[currentProvider];
         const listStr = p.models.map((m, idx) => `${idx + 1}. ${m}`).join('\n');
         const choice = prompt(
-            `🤖 Chọn Model cho [${p.name}] (Nhập số thứ tự hoặc tên model bất kỳ):\n${listStr}`,
+            `🤖 Chọn Model cho [${p.name}] (Nhập số hoặc tên model):\n${listStr}`,
             modelId
         );
         if (!choice) return;
@@ -129,11 +128,12 @@ window.initAISolver = function () {
         #ai-fab-menu.open { display: flex; }
         .ai-fab-item { background: #313244; color: #cdd6f4; border: none; border-radius: 6px; padding: 7px 10px; font-size: 12px; font-weight: 500; text-align: left; cursor: pointer; white-space: nowrap; }
         .ai-fab-item:active { background: #45475a; }
-        #ai-solver-panel { position: fixed; bottom: 12px; right: 12px; width: min(92vw, 370px); max-height: 45vh; background: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2147483646; font-family: system-ui, sans-serif; display: none; flex-direction: column; overflow: hidden; }
+        #ai-solver-panel { position: fixed; bottom: 12px; right: 12px; width: min(92vw, 380px); max-height: 48vh; background: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2147483646; font-family: system-ui, sans-serif; display: none; flex-direction: column; overflow: hidden; }
         #ai-solver-panel.stealth-mode { width: min(75vw, 240px); max-height: 110px; background: rgba(20, 20, 30, 0.78); border: 1px solid rgba(255,255,255,0.08); box-shadow: none; opacity: 0.25; border-radius: 6px; }
         #ai-solver-panel.stealth-mode:hover, #ai-solver-panel.stealth-mode:active { opacity: 0.92; }
         #ai-solver-header { background: #181825; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #313244; font-weight: 600; font-size: 11.5px; }
         #ai-solver-header .actions button { background: transparent; border: none; color: #a6adc8; cursor: pointer; font-size: 13px; padding: 2px 4px; }
+        #ai-solver-header .actions button:hover { color: #fff; }
         #ai-solver-body { padding: 10px; overflow-y: auto; font-size: 13px; line-height: 1.45; white-space: pre-wrap; -webkit-overflow-scrolling: touch; }
         .ai-stealth-mark { display: inline-block; margin-left: 6px; color: currentColor; opacity: 0.38; font-size: 12px; pointer-events: none; }
         .ai-stealth-option-border { border-bottom: 1px dotted rgba(128, 128, 128, 0.38) !important; }
@@ -152,6 +152,7 @@ window.initAISolver = function () {
             <button class="ai-fab-item" id="fab-snip-img">📸 Vuốt chụp ảnh/toán</button>
             <button class="ai-fab-item" id="fab-scan-stealth">🎯 Chấm ngầm đáp án</button>
             <button class="ai-fab-item" id="fab-scan-auto">⚡ Tự động khoanh</button>
+            <button class="ai-fab-item" id="fab-check-keys">🩺 Kiểm tra API Key (Alt+C)</button>
             <button class="ai-fab-item" id="fab-switch-provider">🌐 Nguồn AI: ${PROVIDERS[currentProvider].name}</button>
             <button class="ai-fab-item" id="fab-change-model">🤖 Đổi Model AI</button>
             <button class="ai-fab-item" id="fab-set-key">🔑 Quản lý danh sách Key</button>
@@ -178,15 +179,16 @@ window.initAISolver = function () {
         <div id="ai-solver-header">
             <span id="ai-solver-title">✨ ${currentProvider.toUpperCase()}: ${modelId.split('/').pop()}</span>
             <div class="actions">
-                <button id="ai-btn-provider" title="Đổi nhà cung cấp AI (Gemini/Groq/OpenRouter)">🌐</button>
+                <button id="ai-btn-check" title="Kiểm tra API Key sống/chết (Alt+C)">🩺</button>
+                <button id="ai-btn-provider" title="Đổi nguồn AI">🌐</button>
                 <button id="ai-btn-model" title="Đổi Model">🤖</button>
-                <button id="ai-btn-key" title="Thêm nhiều API Key">🔑</button>
+                <button id="ai-btn-key" title="Quản lý API Key">🔑</button>
                 <button id="ai-btn-stealth" title="Bật/Tắt chế độ mờ">🕵️</button>
                 <button id="ai-btn-copy" title="Copy">📋</button>
                 <button id="ai-btn-close" title="Đóng">✖</button>
             </div>
         </div>
-        <div id="ai-solver-body">Hỗ trợ xoay vòng nhiều API Key & Đa nền tảng AI.</div>
+        <div id="ai-solver-body">Sẵn sàng. Bấm 🩺 (hoặc Alt+C) để test toàn bộ API Key.</div>
     `;
     document.body.appendChild(panel);
 
@@ -225,19 +227,21 @@ window.initAISolver = function () {
     document.getElementById('fab-snip-img').addEventListener('click', () => { fabMenu.classList.remove('open'); startScreenSnip(); });
     document.getElementById('fab-scan-stealth').addEventListener('click', () => { fabMenu.classList.remove('open'); scanAndSolveMCQs(false); });
     document.getElementById('fab-scan-auto').addEventListener('click', () => { fabMenu.classList.remove('open'); scanAndSolveMCQs(true); });
+    document.getElementById('fab-check-keys').addEventListener('click', () => { fabMenu.classList.remove('open'); checkAllApiKeys(); });
     document.getElementById('fab-switch-provider').addEventListener('click', () => { fabMenu.classList.remove('open'); promptSwitchProvider(); });
     document.getElementById('fab-change-model').addEventListener('click', () => { fabMenu.classList.remove('open'); promptModelChange(); });
     document.getElementById('fab-set-key').addEventListener('click', () => { fabMenu.classList.remove('open'); promptManageKeys(); });
     document.getElementById('fab-toggle-stealth').addEventListener('click', () => { fabMenu.classList.remove('open'); toggleStealthUI(); });
 
     document.getElementById('ai-btn-close').addEventListener('click', () => (panel.style.display = 'none'));
+    document.getElementById('ai-btn-check').addEventListener('click', checkAllApiKeys);
     document.getElementById('ai-btn-provider').addEventListener('click', promptSwitchProvider);
     document.getElementById('ai-btn-model').addEventListener('click', promptModelChange);
     document.getElementById('ai-btn-key').addEventListener('click', promptManageKeys);
     document.getElementById('ai-btn-stealth').addEventListener('click', toggleStealthUI);
     document.getElementById('ai-btn-copy').addEventListener('click', () => {
         navigator.clipboard.writeText(bodyEl.innerText);
-        showStatus('✅ Đã sao chép!');
+        showStatus('✅ Đã sao chép!\n\n' + bodyEl.innerText);
     });
 
     document.addEventListener('keydown', (e) => {
@@ -252,12 +256,138 @@ window.initAISolver = function () {
         } else if (e.code === 'KeyA') {
             e.preventDefault();
             scanAndSolveMCQs(e.shiftKey);
+        } else if (e.code === 'KeyC') {
+            e.preventDefault();
+            checkAllApiKeys();
         } else if (e.code === 'KeyH') {
             e.preventDefault();
             toggleStealthUI();
         }
     });
 
+    // ==================== 🩺 TÍNH NĂNG CHECK TOÀN BỘ API KEY (ALT + C) ====================
+    function testSingleKey(provider, model, key) {
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+
+            if (provider === 'gemini') {
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+                    headers: { 'Content-Type': 'application/json' },
+                    data: JSON.stringify({
+                        contents: [{ parts: [{ text: '1' }] }],
+                        generationConfig: { maxOutputTokens: 2 }
+                    }),
+                    timeout: 10000,
+                    onload: (res) => {
+                        const ms = Date.now() - startTime;
+                        try {
+                            const data = JSON.parse(res.responseText);
+                            if (res.status === 200 && data.candidates) {
+                                resolve({ key, status: 'LIVE', ms, detail: `🟢 LIVE (${ms}ms)` });
+                            } else if (res.status === 429 || data.error?.code === 429) {
+                                resolve({ key, status: 'QUOTA', ms, detail: `🟡 HẾT QUOTA 429 (${ms}ms)` });
+                            } else {
+                                const msg = data.error?.message?.slice(0, 45) || `HTTP ${res.status}`;
+                                resolve({ key, status: 'DEAD', ms, detail: `🔴 LỖI: ${msg}` });
+                            }
+                        } catch {
+                            resolve({ key, status: 'DEAD', ms, detail: `🔴 LỖI PHẢN HỒI (${res.status})` });
+                        }
+                    },
+                    onerror: () => resolve({ key, status: 'NETWORK', ms: 0, detail: '⚪ LỖI MẠNG' }),
+                    ontimeout: () => resolve({ key, status: 'TIMEOUT', ms: 10000, detail: '⚪ TIMEOUT (>10s)' })
+                });
+            } else {
+                const endpoint = PROVIDERS[provider].url;
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: endpoint,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    data: JSON.stringify({
+                        model: model,
+                        messages: [{ role: 'user', content: '1' }],
+                        max_tokens: 2
+                    }),
+                    timeout: 10000,
+                    onload: (res) => {
+                        const ms = Date.now() - startTime;
+                        try {
+                            const data = JSON.parse(res.responseText);
+                            if (res.status === 200 && data.choices) {
+                                resolve({ key, status: 'LIVE', ms, detail: `🟢 LIVE (${ms}ms)` });
+                            } else if (res.status === 429) {
+                                resolve({ key, status: 'QUOTA', ms, detail: `🟡 HẾT QUOTA 429 (${ms}ms)` });
+                            } else {
+                                const msg = data.error?.message?.slice(0, 45) || `HTTP ${res.status}`;
+                                resolve({ key, status: 'DEAD', ms, detail: `🔴 LỖI: ${msg}` });
+                            }
+                        } catch {
+                            resolve({ key, status: 'DEAD', ms, detail: `🔴 LỖI PHẢN HỒI (${res.status})` });
+                        }
+                    },
+                    onerror: () => resolve({ key, status: 'NETWORK', ms: 0, detail: '⚪ LỖI MẠNG' }),
+                    ontimeout: () => resolve({ key, status: 'TIMEOUT', ms: 10000, detail: '⚪ TIMEOUT (>10s)' })
+                });
+            }
+        });
+    }
+
+    async function checkAllApiKeys() {
+        const keys = getKeyList(currentProvider);
+        if (keys.length === 0) {
+            showStatus(`⚠️ Chưa có API Key nào cho ${PROVIDERS[currentProvider].name}.`);
+            promptManageKeys();
+            return;
+        }
+
+        showStatus(`🩺 Đang kiểm tra ${keys.length} API Key của [${PROVIDERS[currentProvider].name}]\nModel test: ${modelId}...`);
+
+        const results = await Promise.all(keys.map(k => testSingleKey(currentProvider, modelId, k)));
+
+        let liveCount = 0, quotaCount = 0, deadCount = 0;
+        const validKeys = [];
+
+        const reportLines = results.map((r, idx) => {
+            if (r.status === 'LIVE') {
+                liveCount++;
+                validKeys.push(r.key);
+            } else if (r.status === 'QUOTA') {
+                quotaCount++;
+                validKeys.push(r.key); // Giữ lại key hết quota tạm thời vì qua phút/ngày mới sẽ hồi lại
+            } else if (r.status === 'DEAD') {
+                deadCount++;
+            } else {
+                validKeys.push(r.key);
+            }
+            return `Key #${idx + 1} (${maskKey(r.key)}): ${r.detail}`;
+        });
+
+        const summaryHeader =
+            `📊 KẾT QUẢ CHECK API [${PROVIDERS[currentProvider].name}]\n` +
+            `• Model: ${modelId}\n` +
+            `• Tổng: ${keys.length} | 🟢 Sống: ${liveCount} | 🟡 Hết lượt: ${quotaCount} | 🔴 Hỏng: ${deadCount}\n` +
+            `──────────────────────────\n`;
+
+        showStatus(summaryHeader + reportLines.join('\n'));
+
+        // Nếu phát hiện có Key chết (sai key/bị khóa), hỏi người dùng có muốn tự động dọn dẹp không
+        if (deadCount > 0) {
+            setTimeout(() => {
+                if (confirm(`Phát hiện ${deadCount} API Key bị hỏng/không hợp lệ (🔴).\nBạn có muốn tự động xóa các Key hỏng và chỉ giữ lại ${validKeys.length} Key hoạt động không?`)) {
+                    GM_setValue(`KEYS_${currentProvider}`, validKeys.join(', '));
+                    keyIndexMap[currentProvider] = 0;
+                    showStatus(summaryHeader + reportLines.join('\n') + `\n\n🧹 Đã tự động dọn sạch ${deadCount} Key hỏng!`);
+                }
+            }, 300);
+        }
+    }
+
+    // ==================== GIẢI BÀI TẬP ====================
     function solveTextQuestion(text) {
         if (!ensureApiKey()) return;
         showStatus(`⏳ Đang giải (${PROVIDERS[currentProvider].name})...`);
@@ -268,7 +398,6 @@ Câu hỏi:\n${text}`;
         callMultiAI({ textPrompt: prompt }, (res) => showStatus(res));
     }
 
-    // ==================== CHỤP VÙNG ẢNH ====================
     let startX = 0, startY = 0, isSnipping = false;
     function startScreenSnip() {
         if (!ensureApiKey()) return;
@@ -337,7 +466,6 @@ Câu hỏi:\n${text}`;
     snipOverlay.addEventListener('touchmove', onSnipMove, { passive: false });
     snipOverlay.addEventListener('touchend', onSnipEnd, { passive: false });
 
-    // ==================== QUÉT TRẮC NGHIỆM ====================
     function extractQuestionsFromDOM() {
         const extracted = [];
         const gItems = document.querySelectorAll('div[role="listitem"]');
@@ -432,7 +560,6 @@ Câu hỏi:\n${text}`;
         return getKeyList(currentProvider).length > 0;
     }
 
-    // ==================== BỘ ĐIỀU PHỐI XOAY VÒNG NHIỀU API KEY & ĐA NỀN TẢNG ====================
     function callMultiAI({ textPrompt, base64Image = null, forceJson = false }, onSuccess, retryAttempt = 0) {
         const keys = getKeyList(currentProvider);
         if (keys.length === 0) return showStatus('❌ Chưa có API Key!');
@@ -440,12 +567,9 @@ Câu hỏi:\n${text}`;
         const currentIdx = keyIndexMap[currentProvider] % keys.length;
         const activeKey = keys[currentIdx];
 
-        // 1. Nếu là Google Gemini
         if (currentProvider === 'gemini') {
             const parts = [{ text: textPrompt }];
-            if (base64Image) {
-                parts.push({ inline_data: { mime_type: 'image/png', data: base64Image } });
-            }
+            if (base64Image) parts.push({ inline_data: { mime_type: 'image/png', data: base64Image } });
             const generationConfig = { temperature: 0.1 };
             if (forceJson) generationConfig.responseMimeType = 'application/json';
 
@@ -458,15 +582,13 @@ Câu hỏi:\n${text}`;
                     try {
                         const data = JSON.parse(res.responseText);
                         if (data.error) {
-                            // Tự động xoay sang Key tiếp theo nếu hết hạn mức (429) hoặc Key lỗi
                             if (retryAttempt < keys.length - 1) {
                                 keyIndexMap[currentProvider] = (currentIdx + 1) % keys.length;
-                                showStatus(`🔄 Key #${currentIdx + 1} hết hạn mức, đang tự chuyển sang Key #${keyIndexMap[currentProvider] + 1}...`);
+                                showStatus(`🔄 Key #${currentIdx + 1} lỗi/hết lượt, đang tự chuyển sang Key #${keyIndexMap[currentProvider] + 1}...`);
                                 return callMultiAI({ textPrompt, base64Image, forceJson }, onSuccess, retryAttempt + 1);
                             }
                             return showStatus(`❌ Lỗi Gemini (Đã thử hết ${keys.length} Key): ${data.error.message}`);
                         }
-                        // Xoay vòng đều các key cho lần gọi kế tiếp
                         keyIndexMap[currentProvider] = (currentIdx + 1) % keys.length;
                         onSuccess(data.candidates?.[0]?.content?.parts?.[0]?.text || '');
                     } catch {
@@ -475,12 +597,9 @@ Câu hỏi:\n${text}`;
                 },
                 onerror: () => showStatus('❌ Lỗi mạng khi gọi Gemini API.')
             });
-        }
-        // 2. Nếu là Groq, OpenRouter, hoặc OpenAI (Chuẩn OpenAI Chat Completions)
-        else {
+        } else {
             const endpoint = PROVIDERS[currentProvider].url;
             let contentPayload = textPrompt;
-
             if (base64Image) {
                 contentPayload = [
                     { type: 'text', text: textPrompt },
