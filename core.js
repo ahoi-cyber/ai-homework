@@ -1,6 +1,6 @@
 /*!
  * ============================================================================
- * AI Homework Solver Pro - Core Engine V5.2
+ * AI Homework Solver Pro - Core Engine V5.3
  * Copyright (c) 2026 ahoi-cyber (https://github.com/ahoi-cyber/ai-homework)
  * Author: ahoi-cyber
  * License: All Rights Reserved. Nghiêm cấm sao chép hoặc xóa bản quyền.
@@ -10,23 +10,23 @@
 window.initAISolver = function () {
     'use strict';
 
-    // ==================== ©️ KHÓA BẢN QUYỀN TRONG JAVASCRIPT ====================
+    // ==================== ©️ KHÓA BẢN QUYỀN & LINK CHIA SẺ ====================
     const COPYRIGHT = Object.freeze({
         AUTHOR: 'ahoi-cyber',
         YEAR: '2026',
-        VERSION: '5.2',
+        VERSION: '5.3',
         REPO: 'https://github.com/ahoi-cyber/ai-homework',
+        // Kiểm tra lại đường dẫn link chia sẻ này nếu bị thiếu ký tự cuối do copy từ iOS
+        SHARE_URL: 'https://share.gemini.google/zxOtJrRfkFjDP',
         SIGNATURE: '© 2026 Bản quyền thuộc về ahoi-cyber'
     });
 
-    // Hiển thị bản quyền trong F12 Console ngay khi nạp script
     console.log(
         `%c ✨ AI Homework Solver v${COPYRIGHT.VERSION} %c ${COPYRIGHT.SIGNATURE} `,
         'background:#89b4fa; color:#11111b; font-weight:bold; padding:4px 8px; border-radius:4px 0 0 4px;',
         'background:#1e1e2e; color:#cdd6f4; padding:4px 8px; border-radius:0 4px 4px 0; border:1px solid #89b4fa;'
     );
 
-    // Gắn watermark bản quyền vào đối tượng window
     try {
         Object.defineProperty(window, '__AI_SOLVER_AUTHOR__', {
             value: COPYRIGHT.AUTHOR,
@@ -101,7 +101,7 @@ window.initAISolver = function () {
         return str.replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 350);
     }
 
-    // ==================== 📐 BỘ TRÍCH XUẤT CÔNG THỨC TOÁN (LATEX / MATHJAX / KATEX) ====================
+    // ==================== 📐 TRÍCH XUẤT CÔNG THỨC TOÁN (LATEX / MATHJAX / KATEX) ====================
     function extractTextWithMath(rootNode) {
         if (!rootNode) return '';
         const clone = rootNode.cloneNode(true);
@@ -229,16 +229,16 @@ window.initAISolver = function () {
         .ai-fab-item { background: #313244; color: #cdd6f4; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 500; text-align: left; cursor: pointer; white-space: nowrap; }
         .ai-fab-item:hover, .ai-fab-item:active { background: #45475a; }
         .ai-fab-copyright { font-size: 10px; color: #89b4fa; text-align: center; padding-top: 4px; margin-top: 2px; border-top: 1px solid #313244; font-weight: 600; }
-        #ai-solver-panel { position: fixed; bottom: 12px; right: 12px; width: min(92vw, 395px); max-height: 50vh; background: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2147483646; font-family: system-ui, -apple-system, sans-serif; display: none; flex-direction: column; overflow: hidden; pointer-events: auto; }
+        #ai-solver-panel { position: fixed; bottom: 12px; right: 12px; width: min(92vw, 405px); max-height: 50vh; background: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2147483646; font-family: system-ui, -apple-system, sans-serif; display: none; flex-direction: column; overflow: hidden; pointer-events: auto; }
         #ai-solver-panel.stealth-mode { width: min(75vw, 240px); max-height: 115px; background: rgba(20, 20, 30, 0.75); border: 1px solid rgba(255,255,255,0.08); box-shadow: none; opacity: 0.22; border-radius: 6px; }
         #ai-solver-panel.stealth-mode:hover, #ai-solver-panel.stealth-mode:active { opacity: 0.92; }
         #ai-solver-header { background: #181825; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #313244; font-weight: 600; font-size: 11.5px; }
-        #ai-solver-header .actions button { background: transparent; border: none; color: #a6adc8; cursor: pointer; font-size: 12.5px; padding: 2px 3.5px; }
+        #ai-solver-header .actions button { background: transparent; border: none; color: #a6adc8; cursor: pointer; font-size: 12.5px; padding: 2px 3px; }
         #ai-solver-header .actions button:hover { color: #fff; }
         #ai-solver-body { padding: 10px; overflow-y: auto; font-size: 13px; line-height: 1.45; white-space: pre-wrap; -webkit-overflow-scrolling: touch; }
         #ai-solver-footer { background: #11111b; color: #a6adc8; padding: 4px 10px; font-size: 10.5px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #313244; user-select: none; }
-        #ai-solver-footer a { color: #89b4fa; text-decoration: none; font-weight: 700; }
-        #ai-solver-footer a:hover { text-decoration: underline; }
+        #ai-solver-footer a, #ai-solver-footer button { color: #89b4fa; text-decoration: none; font-weight: 700; background: none; border: none; cursor: pointer; font-size: 10.5px; padding: 0; }
+        #ai-solver-footer a:hover, #ai-solver-footer button:hover { text-decoration: underline; }
         #ai-snip-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.2); cursor: crosshair; z-index: 2147483647; display: none; touch-action: none; user-select: none; pointer-events: auto; }
         #ai-snip-hint { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(24, 24, 37, 0.9); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-family: system-ui, sans-serif; pointer-events: none; }
         #ai-snip-box { position: fixed; border: 1.5px dashed #89b4fa; background: rgba(137, 180, 250, 0.15); pointer-events: none; display: none; }
@@ -261,6 +261,7 @@ window.initAISolver = function () {
             <button class="ai-fab-item" id="fab-switch-provider">🌐 Nguồn AI: ${PROVIDERS[currentProvider].name}</button>
             <button class="ai-fab-item" id="fab-change-model">🤖 Đổi Model AI</button>
             <button class="ai-fab-item" id="fab-set-key">🔑 Quản lý danh sách Key</button>
+            <button class="ai-fab-item" id="fab-share">🔗 Chia sẻ Script / Lời giải</button>
             <button class="ai-fab-item" id="fab-clear-cache">🗑️ Xóa Cache câu hỏi</button>
             <button class="ai-fab-item" id="fab-toggle-stealth">🕵️ Chế độ mờ (Alt+H)</button>
             <button class="ai-fab-item" id="fab-panic">🚨 Khẩn cấp Ẩn tất cả (Alt+X)</button>
@@ -283,6 +284,7 @@ window.initAISolver = function () {
                 <button id="ai-btn-provider" title="Đổi nguồn AI">🌐</button>
                 <button id="ai-btn-model" title="Đổi Model">🤖</button>
                 <button id="ai-btn-key" title="Quản lý API Key">🔑</button>
+                <button id="ai-btn-share" title="Chia sẻ Script hoặc Lời giải">🔗</button>
                 <button id="ai-btn-stealth" title="Bật/Tắt chế độ mờ (Alt+H)">🕵️</button>
                 <button id="ai-btn-copy" title="Copy">📋</button>
                 <button id="ai-btn-close" title="Đóng">✖</button>
@@ -290,8 +292,8 @@ window.initAISolver = function () {
         </div>
         <div id="ai-solver-body">👻 AI Homework Solver v${COPYRIGHT.VERSION} (${COPYRIGHT.SIGNATURE})\n• Alt+A: Chấm ngầm | Alt+Shift+A: Tự khoanh & điền\n• Alt+Q: Giải chữ/LaTeX | Alt+S: Chụp ảnh | Alt+X: Ẩn khẩn cấp</div>
         <div id="ai-solver-footer">
-            <span>© ${COPYRIGHT.YEAR} Bản quyền thuộc về <a href="${COPYRIGHT.REPO}" target="_blank">${COPYRIGHT.AUTHOR}</a></span>
-            <span>v${COPYRIGHT.VERSION} Pro</span>
+            <span>© ${COPYRIGHT.YEAR} Bản quyền <a href="${COPYRIGHT.REPO}" target="_blank">${COPYRIGHT.AUTHOR}</a></span>
+            <span><button id="ai-footer-share">🔗 Chia sẻ</button> · v${COPYRIGHT.VERSION}</span>
         </div>
     `;
     shadow.appendChild(panel);
@@ -308,7 +310,65 @@ window.initAISolver = function () {
     const bodyEl = $('ai-solver-body');
     const fabMenu = $('ai-fab-menu');
 
-    // Hàm kiểm tra bảo vệ bản quyền trong JS (chống chỉnh sửa hoặc xóa tên tác giả)
+    // ==================== 🔗 TÍNH NĂNG CHIA SẺ (MOBILE SHARE SHEET + PC CLIPBOARD) ====================
+    async function shareContent() {
+        const choice = prompt(
+            `🔗 CHIA SẺ (${COPYRIGHT.SIGNATURE})\n` +
+            `Nhập lựa chọn:\n` +
+            `1. Chia sẻ Link Script & Hướng dẫn\n` +
+            `2. Chia sẻ Lời giải đang hiển thị trên màn hình\n` +
+            `3. Mở trực tiếp Link Share`,
+            '1'
+        );
+        if (!choice) return;
+
+        const mode = choice.trim();
+        const shareUrl = COPYRIGHT.SHARE_URL || COPYRIGHT.REPO;
+
+        if (mode === '3') {
+            window.open(shareUrl, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
+        const shareTitle = `AI Homework Solver Pro v${COPYRIGHT.VERSION} by ${COPYRIGHT.AUTHOR}`;
+        let shareText = '';
+
+        if (mode === '2') {
+            const currentAnswer = bodyEl.innerText.trim();
+            shareText = `📝 Lời giải từ AI Homework Solver (${COPYRIGHT.AUTHOR}):\n\n${currentAnswer}\n\n🔗 ${shareUrl}`;
+        } else {
+            shareText =
+                `✨ AI Homework Solver Pro v${COPYRIGHT.VERSION} (${COPYRIGHT.SIGNATURE})\n` +
+                `Hỗ trợ giải bài tập đa AI, đọc công thức toán LaTeX, vuốt chụp ảnh & tự khoanh trắc nghiệm trên PC và Điện thoại.\n` +
+                `🔗 Link chia sẻ: ${shareUrl}\n` +
+                `📦 GitHub: ${COPYRIGHT.REPO}`;
+        }
+
+        // Mở menu Share gốc của điện thoại (iOS/Android) nếu trình duyệt hỗ trợ
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: shareTitle,
+                    text: shareText,
+                    url: mode === '1' ? shareUrl : undefined
+                });
+                showStatus('✅ Đã mở bảng chia sẻ!');
+                return;
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+            }
+        }
+
+        // Fallback cho máy tính: Sao chép sẵn vào Clipboard
+        try {
+            await navigator.clipboard.writeText(shareText);
+            showStatus(`✅ Đã copy nội dung chia sẻ vào bộ nhớ tạm!\nBạn chỉ cần dán (Ctrl + V) để gửi:\n\n${shareText}`);
+        } catch {
+            prompt('Sao chép nội dung chia sẻ bên dưới:', shareText);
+        }
+    }
+
+    // Kiểm tra bảo vệ bản quyền trong JS
     function verifyCopyrightIntegrity() {
         const footerEl = $('ai-solver-footer');
         const fabCopyEl = shadow.querySelector('.ai-fab-copyright');
@@ -493,6 +553,7 @@ window.initAISolver = function () {
     $('fab-switch-provider').addEventListener('click', () => { fabMenu.classList.remove('open'); promptSwitchProvider(); });
     $('fab-change-model').addEventListener('click', () => { fabMenu.classList.remove('open'); promptModelChange(); });
     $('fab-set-key').addEventListener('click', () => { fabMenu.classList.remove('open'); promptManageKeys(); });
+    $('fab-share').addEventListener('click', () => { fabMenu.classList.remove('open'); shareContent(); });
     $('fab-clear-cache').addEventListener('click', () => { fabMenu.classList.remove('open'); clearCacheStore(); });
     $('fab-toggle-stealth').addEventListener('click', () => { fabMenu.classList.remove('open'); toggleStealthUI(); });
     $('fab-panic').addEventListener('click', () => { fabMenu.classList.remove('open'); togglePanicMode(); });
@@ -504,6 +565,8 @@ window.initAISolver = function () {
     $('ai-btn-provider').addEventListener('click', promptSwitchProvider);
     $('ai-btn-model').addEventListener('click', promptModelChange);
     $('ai-btn-key').addEventListener('click', promptManageKeys);
+    $('ai-btn-share').addEventListener('click', shareContent);
+    $('ai-footer-share').addEventListener('click', shareContent);
     $('ai-btn-stealth').addEventListener('click', toggleStealthUI);
     $('ai-btn-copy').addEventListener('click', () => {
         navigator.clipboard.writeText(bodyEl.innerText);
