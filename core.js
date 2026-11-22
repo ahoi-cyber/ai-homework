@@ -1,6 +1,6 @@
 /*!
  * ============================================================================
- * AI Homework Solver Pro - Core Engine V5.3
+ * AI Homework Solver Pro - Core Engine V5.4
  * Copyright (c) 2026 ahoi-cyber (https://github.com/ahoi-cyber/ai-homework)
  * Author: ahoi-cyber
  * License: All Rights Reserved. Nghiêm cấm sao chép hoặc xóa bản quyền.
@@ -14,9 +14,8 @@ window.initAISolver = function () {
     const COPYRIGHT = Object.freeze({
         AUTHOR: 'ahoi-cyber',
         YEAR: '2026',
-        VERSION: '5.3',
+        VERSION: '5.4',
         REPO: 'https://github.com/ahoi-cyber/ai-homework',
-        // Kiểm tra lại đường dẫn link chia sẻ này nếu bị thiếu ký tự cuối do copy từ iOS
         SHARE_URL: 'https://share.gemini.google/zxOtJrRfkFjDP',
         SIGNATURE: '© 2026 Bản quyền thuộc về ahoi-cyber'
     });
@@ -71,6 +70,7 @@ window.initAISolver = function () {
 
     const originalPageTitle = document.title;
     let lastSelectedText = '';
+    let lastSolvedSnapshot = null; // Lưu đáp án lần giải gần nhất để xuất gói chia sẻ cho bạn bè
     let keyIndexMap = { gemini: 0, groq: 0, openrouter: 0, openai: 0 };
 
     // ==================== 💾 BỘ NHỚ ĐỆM CÂU HỎI (LOCAL CACHE) ====================
@@ -98,7 +98,15 @@ window.initAISolver = function () {
     }
 
     function normalizeHash(str) {
-        return str.replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 350);
+        return String(str || '').replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 350);
+    }
+
+    function toBase64UTF8(str) {
+        return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function fromBase64UTF8(b64) {
+        return decodeURIComponent(escape(atob(b64)));
     }
 
     // ==================== 📐 TRÍCH XUẤT CÔNG THỨC TOÁN (LATEX / MATHJAX / KATEX) ====================
@@ -224,16 +232,16 @@ window.initAISolver = function () {
         #ai-mobile-fab { position: fixed; right: 8px; bottom: 45%; z-index: 2147483646; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-family: system-ui, -apple-system, sans-serif; user-select: none; pointer-events: auto; }
         #ai-fab-trigger { width: 34px; height: 34px; border-radius: 50%; background: rgba(30, 30, 46, 0.45); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.15); font-size: 13px; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
         #ai-mobile-fab.stealth #ai-fab-trigger { opacity: 0.18; width: 26px; height: 26px; font-size: 10px; }
-        #ai-fab-menu { display: none; flex-direction: column; gap: 4px; background: rgba(24, 24, 37, 0.96); padding: 6px; border-radius: 10px; border: 1px solid #313244; box-shadow: 0 6px 20px rgba(0,0,0,0.45); max-height: 75vh; overflow-y: auto; }
+        #ai-fab-menu { display: none; flex-direction: column; gap: 4px; background: rgba(24, 24, 37, 0.96); padding: 6px; border-radius: 10px; border: 1px solid #313244; box-shadow: 0 6px 20px rgba(0,0,0,0.45); max-height: 76vh; overflow-y: auto; }
         #ai-fab-menu.open { display: flex; }
         .ai-fab-item { background: #313244; color: #cdd6f4; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 500; text-align: left; cursor: pointer; white-space: nowrap; }
         .ai-fab-item:hover, .ai-fab-item:active { background: #45475a; }
         .ai-fab-copyright { font-size: 10px; color: #89b4fa; text-align: center; padding-top: 4px; margin-top: 2px; border-top: 1px solid #313244; font-weight: 600; }
-        #ai-solver-panel { position: fixed; bottom: 12px; right: 12px; width: min(92vw, 405px); max-height: 50vh; background: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2147483646; font-family: system-ui, -apple-system, sans-serif; display: none; flex-direction: column; overflow: hidden; pointer-events: auto; }
+        #ai-solver-panel { position: fixed; bottom: 12px; right: 12px; width: min(92vw, 415px); max-height: 50vh; background: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2147483646; font-family: system-ui, -apple-system, sans-serif; display: none; flex-direction: column; overflow: hidden; pointer-events: auto; }
         #ai-solver-panel.stealth-mode { width: min(75vw, 240px); max-height: 115px; background: rgba(20, 20, 30, 0.75); border: 1px solid rgba(255,255,255,0.08); box-shadow: none; opacity: 0.22; border-radius: 6px; }
         #ai-solver-panel.stealth-mode:hover, #ai-solver-panel.stealth-mode:active { opacity: 0.92; }
         #ai-solver-header { background: #181825; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #313244; font-weight: 600; font-size: 11.5px; }
-        #ai-solver-header .actions button { background: transparent; border: none; color: #a6adc8; cursor: pointer; font-size: 12.5px; padding: 2px 3px; }
+        #ai-solver-header .actions button { background: transparent; border: none; color: #a6adc8; cursor: pointer; font-size: 12.5px; padding: 2px 2.8px; }
         #ai-solver-header .actions button:hover { color: #fff; }
         #ai-solver-body { padding: 10px; overflow-y: auto; font-size: 13px; line-height: 1.45; white-space: pre-wrap; -webkit-overflow-scrolling: touch; }
         #ai-solver-footer { background: #11111b; color: #a6adc8; padding: 4px 10px; font-size: 10.5px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #313244; user-select: none; }
@@ -254,6 +262,8 @@ window.initAISolver = function () {
             <button class="ai-fab-item" id="fab-snip-img">📸 Vuốt chụp ảnh/toán (Alt+S)</button>
             <button class="ai-fab-item" id="fab-scan-stealth">🎯 Chấm ngầm đáp án (Alt+A)</button>
             <button class="ai-fab-item" id="fab-scan-auto">⚡ Tự khoanh & Điền ô trống (Alt+Shift+A)</button>
+            <button class="ai-fab-item" id="fab-import-link">📥 Nhập Link / Mã đáp án (Alt+I)</button>
+            <button class="ai-fab-item" id="fab-share">🔗 Chia sẻ / Xuất gói đáp án</button>
             <button class="ai-fab-item" id="fab-toggle-delay">⏱️ Trễ giống người thật: ${isHumanDelay ? 'BẬT' : 'TẮT'}</button>
             <button class="ai-fab-item" id="fab-toggle-title">🏷️ Hiện đáp án trên Tab: ${isTitleSpoof ? 'BẬT' : 'TẮT'}</button>
             <button class="ai-fab-item" id="fab-toggle-shield">🛡️ Khiên Anti-Tab & Copy: ${isShieldActive ? 'BẬT' : 'TẮT'}</button>
@@ -261,7 +271,6 @@ window.initAISolver = function () {
             <button class="ai-fab-item" id="fab-switch-provider">🌐 Nguồn AI: ${PROVIDERS[currentProvider].name}</button>
             <button class="ai-fab-item" id="fab-change-model">🤖 Đổi Model AI</button>
             <button class="ai-fab-item" id="fab-set-key">🔑 Quản lý danh sách Key</button>
-            <button class="ai-fab-item" id="fab-share">🔗 Chia sẻ Script / Lời giải</button>
             <button class="ai-fab-item" id="fab-clear-cache">🗑️ Xóa Cache câu hỏi</button>
             <button class="ai-fab-item" id="fab-toggle-stealth">🕵️ Chế độ mờ (Alt+H)</button>
             <button class="ai-fab-item" id="fab-panic">🚨 Khẩn cấp Ẩn tất cả (Alt+X)</button>
@@ -278,22 +287,23 @@ window.initAISolver = function () {
         <div id="ai-solver-header">
             <span id="ai-solver-title">✨ ${currentProvider.toUpperCase()}: ${modelId.split('/').pop()}</span>
             <div class="actions">
+                <button id="ai-btn-import" title="Nhập Link / Mã đáp án của người khác (Alt+I)">📥</button>
+                <button id="ai-btn-share" title="Chia sẻ / Xuất gói đáp án">🔗</button>
                 <button id="ai-btn-shield" title="Bật/Tắt Khiên Anti-Tab & Copy (Alt+U)">🛡️</button>
                 <button id="ai-btn-title" title="Bật/Tắt hiện đáp án trên tên Tab">🏷️</button>
                 <button id="ai-btn-check" title="Kiểm tra API Key (Alt+C)">🩺</button>
                 <button id="ai-btn-provider" title="Đổi nguồn AI">🌐</button>
                 <button id="ai-btn-model" title="Đổi Model">🤖</button>
                 <button id="ai-btn-key" title="Quản lý API Key">🔑</button>
-                <button id="ai-btn-share" title="Chia sẻ Script hoặc Lời giải">🔗</button>
                 <button id="ai-btn-stealth" title="Bật/Tắt chế độ mờ (Alt+H)">🕵️</button>
                 <button id="ai-btn-copy" title="Copy">📋</button>
                 <button id="ai-btn-close" title="Đóng">✖</button>
             </div>
         </div>
-        <div id="ai-solver-body">👻 AI Homework Solver v${COPYRIGHT.VERSION} (${COPYRIGHT.SIGNATURE})\n• Alt+A: Chấm ngầm | Alt+Shift+A: Tự khoanh & điền\n• Alt+Q: Giải chữ/LaTeX | Alt+S: Chụp ảnh | Alt+X: Ẩn khẩn cấp</div>
+        <div id="ai-solver-body">👻 AI Homework Solver v${COPYRIGHT.VERSION} (${COPYRIGHT.SIGNATURE})\n• Alt+A: Chấm ngầm | Alt+Shift+A: Tự khoanh & điền\n• Alt+I: Nhập Link đáp án người khác | Alt+X: Ẩn khẩn cấp</div>
         <div id="ai-solver-footer">
             <span>© ${COPYRIGHT.YEAR} Bản quyền <a href="${COPYRIGHT.REPO}" target="_blank">${COPYRIGHT.AUTHOR}</a></span>
-            <span><button id="ai-footer-share">🔗 Chia sẻ</button> · v${COPYRIGHT.VERSION}</span>
+            <span><button id="ai-footer-import">📥 Nhập</button> · <button id="ai-footer-share">🔗 Share</button> · v${COPYRIGHT.VERSION}</span>
         </div>
     `;
     shadow.appendChild(panel);
@@ -310,14 +320,301 @@ window.initAISolver = function () {
     const bodyEl = $('ai-solver-body');
     const fabMenu = $('ai-fab-menu');
 
-    // ==================== 🔗 TÍNH NĂNG CHIA SẺ (MOBILE SHARE SHEET + PC CLIPBOARD) ====================
+    // ==================== 📥 NHẬP LINK / MÃ ĐÁP ÁN CỦA NGƯỜI KHÁC (ALT + I) ====================
+    function extractCleanUrl(rawInput) {
+        const match = String(rawInput || '').match(/https?:\/\/[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
+        return match ? match[0].replace(/[.,;)\]]+$/, '') : '';
+    }
+
+    function stripHtmlToPlainText(html) {
+        try {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            doc.querySelectorAll('script, style, noscript, svg, template, head').forEach((el) => el.remove());
+            return (doc.body?.innerText || doc.body?.textContent || '').replace(/\s+\n/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
+        } catch {
+            return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+    }
+
+    // Giải mã Gói đáp án AHOI_ANS:... (tự khớp kể cả khi bị đảo thứ tự câu hỏi và đảo đáp án!)
+    function matchAnswerPackToQuestions(packString, questions) {
+        const tokenMatch = packString.match(/AHOI_ANS:([A-Za-z0-9+/=]+)/);
+        if (!tokenMatch) return null;
+        try {
+            const parsed = JSON.parse(fromBase64UTF8(tokenMatch[1]));
+            if (!parsed || !Array.isArray(parsed.items)) return null;
+
+            const resultsMap = {};
+            let matchedCount = 0;
+
+            questions.forEach((qObj, qIdx) => {
+                const qHash = normalizeHash(qObj.question);
+                // Ưu tiên tìm đúng nội dung câu hỏi (chống đảo đề), nếu không thấy mới khớp theo số thứ tự
+                let found = parsed.items.find((it) => it.q && (it.q === qHash || qHash.includes(it.q) || it.q.includes(qHash)));
+                if (!found && parsed.items[qIdx] && parsed.items[qIdx].t === qObj.type) {
+                    found = parsed.items[qIdx];
+                }
+                if (!found) return;
+
+                if (qObj.type === 'mcq') {
+                    let indices = [];
+                    // Khớp theo nội dung đáp án đúng (chống đảo đáp án A/B/C/D)
+                    if (Array.isArray(found.at) && found.at.length > 0) {
+                        found.at.forEach((ansTextHash) => {
+                            const optIdx = qObj.options.findIndex((o) => {
+                                const oHash = normalizeHash(o.text);
+                                return oHash === ansTextHash || oHash.includes(ansTextHash) || ansTextHash.includes(oHash);
+                            });
+                            if (optIdx !== -1 && !indices.includes(optIdx)) indices.push(optIdx);
+                        });
+                    }
+                    // Dự phòng theo chỉ số gốc
+                    if (indices.length === 0 && Array.isArray(found.ai)) {
+                        indices = found.ai.filter((idx) => idx >= 0 && idx < qObj.options.length);
+                    }
+                    if (indices.length > 0) {
+                        resultsMap[qIdx] = { id: qIdx, answerIndices: indices };
+                        matchedCount++;
+                    }
+                } else if (qObj.type === 'text' && found.ta !== undefined) {
+                    resultsMap[qIdx] = { id: qIdx, textAnswer: found.ta };
+                    matchedCount++;
+                }
+            });
+
+            return matchedCount > 0 ? resultsMap : null;
+        } catch {
+            return null;
+        }
+    }
+
+    // Tách đáp án từ JSON hoặc chuỗi đáp án chuẩn (VD: "1A 2C 3D", "Câu 1: B", "1. A")
+    function parseStructuredAnswers(rawText, questions) {
+        const resultsMap = {};
+        let count = 0;
+
+        // 1. Thử đọc mảng JSON chuẩn từ script
+        try {
+            const jsonMatch = rawText.match(/\[\s*\{[\s\S]*?"id"[\s\S]*?\}\s*\]/);
+            if (jsonMatch) {
+                const arr = JSON.parse(jsonMatch[0]);
+                arr.forEach((it) => {
+                    if (typeof it.id === 'number' && questions[it.id]) {
+                        resultsMap[it.id] = it;
+                        count++;
+                    }
+                });
+                if (count > 0) return resultsMap;
+            }
+        } catch {}
+
+        // 2. Thử tách các cặp số thứ tự + chữ cái đáp án (VD: Câu 1: A, 2. C, 3D, C4:B)
+        const pattern = /(?:^|[\s|,;\n])(?:câu\s*|c\s*)?(\d{1,3})\s*(?:[:.\-)\]]\s*|\s+)?([A-F]{1,4})(?=$|[\s|,;.\n)])/gi;
+        let match;
+        while ((match = pattern.exec(rawText)) !== null) {
+            const qNum = parseInt(match[1], 10);
+            const letters = match[2].toUpperCase();
+            if (qNum < 1 || qNum > questions.length) continue;
+
+            const qIdx = qNum - 1;
+            const qObj = questions[qIdx];
+            if (!qObj || qObj.type !== 'mcq') continue;
+
+            const indices = [];
+            for (const ch of letters) {
+                const optIdx = ch.charCodeAt(0) - 65;
+                if (optIdx >= 0 && optIdx < qObj.options.length && !indices.includes(optIdx)) {
+                    indices.push(optIdx);
+                }
+            }
+            if (indices.length > 0 && !resultsMap[qIdx]) {
+                resultsMap[qIdx] = { id: qIdx, answerIndices: indices };
+                count++;
+            }
+        }
+
+        return count > 0 ? resultsMap : null;
+    }
+
+    // Nhờ AI đối chiếu nội dung văn bản từ link người khác sang danh sách câu hỏi trên trang hiện tại
+    function mapExternalTextWithAI(externalText, questions, autoAct) {
+        if (!ensureApiKey()) return;
+        showStatus(`🤖 Đang đối chiếu đáp án từ nguồn chia sẻ với ${questions.length} câu hỏi trên trang...`);
+
+        const payloadForAI = questions.map((q, idx) => ({
+            id: idx,
+            type: q.type,
+            question: q.question,
+            options: q.type === 'mcq' ? q.options.map((o, oIdx) => `${oIdx}: ${o.text}`) : undefined
+        }));
+
+        const prompt = `Dưới đây là NỘI DUNG ĐÁP ÁN TỪ LINK CHIA SẺ của người khác và DANH SÁCH CÂU HỎI HIỆN TẠI.
+Hãy dựa vào nội dung đáp án được cung cấp để ánh xạ chính xác sang từng câu hỏi hiện tại (chú ý đề có thể bị đảo thứ tự câu hoặc đảo thứ tự đáp án A/B/C/D).
+Chỉ trả về MẢNG JSON thuần túy (không markdown):
+- Câu type="mcq": {"id": <số>, "answerIndices": [<mảng chỉ số đáp án đúng>]}
+- Câu type="text": {"id": <số>, "textAnswer": "<đáp án ngắn>"}
+
+=== NỘI DUNG ĐÁP ÁN TỪ LINK ===
+${externalText.slice(0, 12000)}
+
+=== CÂU HỎI TRÊN TRANG HIỆN TẠI ===
+${JSON.stringify(payloadForAI)}`;
+
+        callMultiAI({ textPrompt: prompt, forceJson: true }, (res) => {
+            try {
+                const jsonMatch = res.match(/\[[\s\S]*\]/);
+                const clean = jsonMatch ? jsonMatch[0] : res.replace(/```json|```/g, '').trim();
+                const aiResults = JSON.parse(clean);
+                const resultsMap = {};
+                aiResults.forEach((it) => (resultsMap[it.id] = it));
+                applyQuestionResults(questions, resultsMap, autoAct, '📥 ĐÃ ÁP DỤNG TỪ LINK');
+            } catch {
+                showStatus('❌ Không thể ánh xạ đáp án từ nội dung này:\n' + res);
+            }
+        });
+    }
+
+    function processImportedContent(contentText, questions, autoAct, sourceUrl = '') {
+        // Ưu tiên 1: Gói đáp án AHOI_ANS:... (chống đảo đề, 0 tốn API)
+        const packMap = matchAnswerPackToQuestions(contentText, questions);
+        if (packMap) {
+            applyQuestionResults(questions, packMap, autoAct, '📥 TỪ GÓI ĐÁP ÁN (0ms)');
+            return;
+        }
+
+        // Ưu tiên 2: Chuỗi đáp án chuẩn (1A 2C 3D, Câu 1: B, JSON...) (0 tốn API)
+        const parsedMap = parseStructuredAnswers(contentText, questions);
+        if (parsedMap && Object.keys(parsedMap).length >= Math.min(questions.length, 1)) {
+            applyQuestionResults(questions, parsedMap, autoAct, '📥 TỪ ĐÁP ÁN NHẬP VÀO');
+            return;
+        }
+
+        // Ưu tiên 3: Nếu là bài giải chữ dài từ link web/Gemini -> Dùng AI đối chiếu tự động
+        if (contentText.length > 40) {
+            mapExternalTextWithAI(contentText, questions, autoAct);
+        } else {
+            showStatus(
+                `⚠️ Không đọc được nội dung đáp án trực tiếp từ link này (trang có thể yêu cầu tải bằng JavaScript).\n` +
+                (sourceUrl ? `👉 Gợi ý: Mở link ${sourceUrl}, copy toàn bộ lời giải rồi bấm 📥 và dán thẳng chữ vào ô nhập!` : '')
+            );
+        }
+    }
+
+    function importAnswersFromLinkOrText() {
+        if (!verifyCopyrightIntegrity()) return;
+
+        const questions = extractQuestionsFromDOM();
+        if (!questions.length) {
+            showStatus('⚠️ Không tìm thấy câu hỏi nào trên trang hiện tại để áp dụng đáp án.');
+            return;
+        }
+
+        const lastLink = GM_getValue('LAST_IMPORT_LINK', '');
+        const rawInput = prompt(
+            `📥 NHẬP LINK HOẶC MÃ ĐÁP ÁN CỦA NGƯỜI KHÁC (${questions.length} câu trên trang)\n` +
+            `Hỗ trợ dán 1 trong 3 dạng:\n` +
+            `1. Đường link chia sẻ (Gemini Share, Pastebin, GitHub Raw/Gist...)\n` +
+            `2. Mã gói đáp án xuất từ Script (AHOI_ANS:... - chống đảo đề)\n` +
+            `3. Chuỗi đáp án dán trực tiếp (VD: 1A 2C 3D hoặc toàn bộ bài giải)`,
+            lastLink
+        );
+        if (!rawInput || !rawInput.trim()) return;
+
+        const autoAct = confirm(
+            `Chọn cách áp dụng đáp án cho ${questions.length} câu hỏi:\n` +
+            `• Nhấn [OK] = ⚡ Tự động khoanh & điền ô trống\n` +
+            `• Nhấn [Hủy / Cancel] = 🎯 Chỉ chấm ngầm (•) bên cạnh đáp án`
+        );
+
+        clearStealthMarksFromPage();
+
+        const cleanedUrl = extractCleanUrl(rawInput);
+
+        // Trường hợp người dùng dán Link HTTP/HTTPS
+        if (cleanedUrl && !rawInput.includes('AHOI_ANS:')) {
+            GM_setValue('LAST_IMPORT_LINK', cleanedUrl);
+            showStatus(`📥 Đang tải đáp án từ link:\n${cleanedUrl}...`);
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: cleanedUrl,
+                timeout: 15000,
+                onload: (res) => {
+                    if (res.status >= 200 && res.status < 400 && res.responseText) {
+                        const rawBody = res.responseText;
+                        // Kiểm tra xem trong mã nguồn HTML/text thô có chứa gói AHOI_ANS hay không
+                        if (rawBody.includes('AHOI_ANS:')) {
+                            processImportedContent(rawBody, questions, autoAct, cleanedUrl);
+                            return;
+                        }
+                        const plainText = stripHtmlToPlainText(rawBody);
+                        // Kiểm tra trường hợp trang SPA (như Google/Gemini) chỉ trả về khung rỗng yêu cầu trình duyệt chạy JS
+                        const looksLikeEmptySpa = plainText.length < 60 || /enable javascript|sign in to continue|gemini/i.test(plainText) && plainText.length < 220;
+                        if (looksLikeEmptySpa) {
+                            showStatus(
+                                `⚠️ Link này dùng cơ chế tải động (JavaScript SPA) nên không đọc ngầm được trực tiếp:\n${cleanedUrl}\n\n` +
+                                `👉 Cách xử lý cực nhanh:\n1. Mở link đó ở tab mới.\n2. Copy toàn bộ phần đáp án.\n3. Quay lại đây bấm 📥 (Alt + I) và dán trực tiếp đoạn chữ đó vào!`
+                            );
+                            if (confirm('Link này cần mở trực tiếp trên trình duyệt để copy chữ. Bạn có muốn mở link này ở tab mới ngay bây giờ không?')) {
+                                window.open(cleanedUrl, '_blank', 'noopener,noreferrer');
+                            }
+                            return;
+                        }
+                        processImportedContent(plainText, questions, autoAct, cleanedUrl);
+                    } else {
+                        showStatus(`❌ Không tải được link (Mã HTTP ${res.status}). Hãy kiểm tra xem link đã mở quyền công khai chưa.`);
+                    }
+                },
+                onerror: () => showStatus('❌ Lỗi mạng khi tải link đáp án. Đảm bảo Loader Tampermonkey đã có dòng "// @connect *".'),
+                ontimeout: () => showStatus('❌ Quá thời gian tải link (>15s).')
+            });
+        } else {
+            // Trường hợp dán Mã AHOI_ANS:... hoặc Chuỗi đáp án (1A 2B 3C / Bài giải copy)
+            processImportedContent(rawInput.trim(), questions, autoAct);
+        }
+    }
+
+    // ==================== 🔗 CHIA SẺ & XUẤT GÓI ĐÁP ÁN CHO BẠN BÈ ====================
+    function buildExportAnswerPack() {
+        if (!lastSolvedSnapshot || !lastSolvedSnapshot.questions.length) return null;
+        const { questions, resultsMap } = lastSolvedSnapshot;
+        const items = [];
+
+        questions.forEach((qObj, idx) => {
+            const res = resultsMap[idx];
+            if (!res) return;
+            if (qObj.type === 'mcq' && Array.isArray(res.answerIndices)) {
+                const ansTexts = res.answerIndices
+                    .map((i) => qObj.options[i]?.text)
+                    .filter(Boolean)
+                    .map((t) => normalizeHash(t));
+                items.push({
+                    t: 'mcq',
+                    q: normalizeHash(qObj.question),
+                    ai: res.answerIndices,
+                    at: ansTexts
+                });
+            } else if (qObj.type === 'text' && res.textAnswer !== undefined) {
+                items.push({
+                    t: 'text',
+                    q: normalizeHash(qObj.question),
+                    ta: String(res.textAnswer).trim()
+                });
+            }
+        });
+
+        if (!items.length) return null;
+        return 'AHOI_ANS:' + toBase64UTF8(JSON.stringify({ v: 5, items }));
+    }
+
     async function shareContent() {
         const choice = prompt(
             `🔗 CHIA SẺ (${COPYRIGHT.SIGNATURE})\n` +
             `Nhập lựa chọn:\n` +
-            `1. Chia sẻ Link Script & Hướng dẫn\n` +
-            `2. Chia sẻ Lời giải đang hiển thị trên màn hình\n` +
-            `3. Mở trực tiếp Link Share`,
+            `1. Xuất MÃ GÓI ĐÁP ÁN (AHOI_ANS:...) gửi bạn bè nhập vào là khoanh luôn (chống đảo đề!)\n` +
+            `2. Chia sẻ Lời giải đang hiển thị trên bảng\n` +
+            `3. Chia sẻ Link Script & GitHub\n` +
+            `4. Mở trực tiếp Link Share`,
             '1'
         );
         if (!choice) return;
@@ -325,7 +622,7 @@ window.initAISolver = function () {
         const mode = choice.trim();
         const shareUrl = COPYRIGHT.SHARE_URL || COPYRIGHT.REPO;
 
-        if (mode === '3') {
+        if (mode === '4') {
             window.open(shareUrl, '_blank', 'noopener,noreferrer');
             return;
         }
@@ -333,25 +630,26 @@ window.initAISolver = function () {
         const shareTitle = `AI Homework Solver Pro v${COPYRIGHT.VERSION} by ${COPYRIGHT.AUTHOR}`;
         let shareText = '';
 
-        if (mode === '2') {
-            const currentAnswer = bodyEl.innerText.trim();
-            shareText = `📝 Lời giải từ AI Homework Solver (${COPYRIGHT.AUTHOR}):\n\n${currentAnswer}\n\n🔗 ${shareUrl}`;
+        if (mode === '1') {
+            const packCode = buildExportAnswerPack();
+            if (!packCode) {
+                showStatus('⚠️ Bạn chưa quét giải đề nào trên trang này! Hãy bấm 🎯 (Alt + A) giải đề trước rồi xuất mã gửi bạn bè.');
+                return;
+            }
+            shareText = packCode;
+        } else if (mode === '2') {
+            shareText = `📝 Lời giải từ AI Homework Solver (${COPYRIGHT.AUTHOR}):\n\n${bodyEl.innerText.trim()}\n\n🔗 ${shareUrl}`;
         } else {
             shareText =
                 `✨ AI Homework Solver Pro v${COPYRIGHT.VERSION} (${COPYRIGHT.SIGNATURE})\n` +
-                `Hỗ trợ giải bài tập đa AI, đọc công thức toán LaTeX, vuốt chụp ảnh & tự khoanh trắc nghiệm trên PC và Điện thoại.\n` +
+                `Hỗ trợ giải bài tập đa AI, đọc công thức toán LaTeX, nhập link đáp án & tự khoanh trắc nghiệm.\n` +
                 `🔗 Link chia sẻ: ${shareUrl}\n` +
                 `📦 GitHub: ${COPYRIGHT.REPO}`;
         }
 
-        // Mở menu Share gốc của điện thoại (iOS/Android) nếu trình duyệt hỗ trợ
-        if (navigator.share) {
+        if (navigator.share && mode !== '1') {
             try {
-                await navigator.share({
-                    title: shareTitle,
-                    text: shareText,
-                    url: mode === '1' ? shareUrl : undefined
-                });
+                await navigator.share({ title: shareTitle, text: shareText, url: mode === '3' ? shareUrl : undefined });
                 showStatus('✅ Đã mở bảng chia sẻ!');
                 return;
             } catch (err) {
@@ -359,12 +657,15 @@ window.initAISolver = function () {
             }
         }
 
-        // Fallback cho máy tính: Sao chép sẵn vào Clipboard
         try {
             await navigator.clipboard.writeText(shareText);
-            showStatus(`✅ Đã copy nội dung chia sẻ vào bộ nhớ tạm!\nBạn chỉ cần dán (Ctrl + V) để gửi:\n\n${shareText}`);
+            showStatus(
+                mode === '1'
+                    ? `✅ ĐÃ XUẤT & COPY MÃ GÓI ĐÁP ÁN (chống đảo đề)!\nBạn chỉ cần gửi mã này (hoặc up lên Pastebin/GitHub lấy link) cho người khác bấm 📥 (Alt + I) dán vào là khoanh tức thì.`
+                    : `✅ Đã copy nội dung chia sẻ vào bộ nhớ tạm!\n\n${shareText}`
+            );
         } catch {
-            prompt('Sao chép nội dung chia sẻ bên dưới:', shareText);
+            prompt('Sao chép nội dung bên dưới:', shareText);
         }
     }
 
@@ -546,6 +847,8 @@ window.initAISolver = function () {
     $('fab-snip-img').addEventListener('click', () => { fabMenu.classList.remove('open'); startScreenSnip(); });
     $('fab-scan-stealth').addEventListener('click', () => { fabMenu.classList.remove('open'); scanAndSolveQuestions(false); });
     $('fab-scan-auto').addEventListener('click', () => { fabMenu.classList.remove('open'); scanAndSolveQuestions(true); });
+    $('fab-import-link').addEventListener('click', () => { fabMenu.classList.remove('open'); importAnswersFromLinkOrText(); });
+    $('fab-share').addEventListener('click', () => { fabMenu.classList.remove('open'); shareContent(); });
     $('fab-toggle-delay').addEventListener('click', () => { fabMenu.classList.remove('open'); toggleHumanDelay(); });
     $('fab-toggle-title').addEventListener('click', () => { fabMenu.classList.remove('open'); toggleTitleSpoof(); });
     $('fab-toggle-shield').addEventListener('click', () => { fabMenu.classList.remove('open'); toggleShield(); });
@@ -553,20 +856,21 @@ window.initAISolver = function () {
     $('fab-switch-provider').addEventListener('click', () => { fabMenu.classList.remove('open'); promptSwitchProvider(); });
     $('fab-change-model').addEventListener('click', () => { fabMenu.classList.remove('open'); promptModelChange(); });
     $('fab-set-key').addEventListener('click', () => { fabMenu.classList.remove('open'); promptManageKeys(); });
-    $('fab-share').addEventListener('click', () => { fabMenu.classList.remove('open'); shareContent(); });
     $('fab-clear-cache').addEventListener('click', () => { fabMenu.classList.remove('open'); clearCacheStore(); });
     $('fab-toggle-stealth').addEventListener('click', () => { fabMenu.classList.remove('open'); toggleStealthUI(); });
     $('fab-panic').addEventListener('click', () => { fabMenu.classList.remove('open'); togglePanicMode(); });
 
     $('ai-btn-close').addEventListener('click', () => (panel.style.display = 'none'));
+    $('ai-btn-import').addEventListener('click', importAnswersFromLinkOrText);
+    $('ai-footer-import').addEventListener('click', importAnswersFromLinkOrText);
+    $('ai-btn-share').addEventListener('click', shareContent);
+    $('ai-footer-share').addEventListener('click', shareContent);
     $('ai-btn-shield').addEventListener('click', toggleShield);
     $('ai-btn-title').addEventListener('click', toggleTitleSpoof);
     $('ai-btn-check').addEventListener('click', checkAllApiKeys);
     $('ai-btn-provider').addEventListener('click', promptSwitchProvider);
     $('ai-btn-model').addEventListener('click', promptModelChange);
     $('ai-btn-key').addEventListener('click', promptManageKeys);
-    $('ai-btn-share').addEventListener('click', shareContent);
-    $('ai-footer-share').addEventListener('click', shareContent);
     $('ai-btn-stealth').addEventListener('click', toggleStealthUI);
     $('ai-btn-copy').addEventListener('click', () => {
         navigator.clipboard.writeText(bodyEl.innerText);
@@ -590,6 +894,9 @@ window.initAISolver = function () {
         } else if (e.code === 'KeyA') {
             e.preventDefault();
             scanAndSolveQuestions(e.shiftKey);
+        } else if (e.code === 'KeyI') {
+            e.preventDefault();
+            importAnswersFromLinkOrText();
         } else if (e.code === 'KeyC') {
             e.preventDefault();
             checkAllApiKeys();
@@ -880,7 +1187,8 @@ Câu hỏi:\n${text}`;
         return extracted;
     }
 
-    async function applyQuestionResults(questions, resultsMap, autoAct = false) {
+    async function applyQuestionResults(questions, resultsMap, autoAct = false, statusPrefix = '✅ Đã xử lý') {
+        lastSolvedSnapshot = { questions, resultsMap };
         let solved = 0;
         const summary = [];
 
@@ -930,7 +1238,7 @@ Câu hỏi:\n${text}`;
         }
 
         const tabShort = summary.join(' ');
-        showStatus(`✅ Đã xử lý (${solved}/${questions.length} câu):\n` + summary.join(' | '), tabShort);
+        showStatus(`${statusPrefix} (${solved}/${questions.length} câu):\n` + summary.join(' | '), tabShort);
     }
 
     function scanAndSolveQuestions(autoAct = false) {
